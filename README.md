@@ -79,7 +79,7 @@ cursor.close()
 db.close()
 ```
 ### Step 2: MySQL Database Schema Design
-
+Create the target database and relational table with a composite primary key (trade_date, ticker) to prevent record duplication and enforce data integrity.
 ```sql
 CREATE DATABASE IF NOT EXISTS global_markets;
 USE global_markets;
@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS asset_prices (
 
 ```sql
 -- Daily Returns View
+Calculates time-additive daily logarithmic returns using LAG() window functions partitioned by ticker.$$\text{Log Return}_t = \ln\left(\frac{P_t}{P_{t-1}}\right)$$
 CREATE OR REPLACE VIEW daily_returns AS
 SELECT 
     trade_date,
@@ -108,6 +109,7 @@ SELECT
 FROM asset_prices;
 
 --30-Day Annualized Rolling Volatility View
+Calculates rolling 30-day standard deviation scaled by $\sqrt{252}$ trading days to compute annualized asset risk.$$\sigma_{\text{Annualized}} = \sigma_{30\text{d}} \times \sqrt{252}$$
 CREATE OR REPLACE VIEW rolling_volatility AS
 SELECT 
     trade_date,
@@ -154,7 +156,7 @@ SELECT
     END AS is_shock_day
 FROM rolling_stats;
 ```
-###Step 4: Visual Reporting Engine
+### Step 4: Visual Reporting Engine
 Python connects directly to the MySQL database view (rolling_volatility) to extract pre-processed metrics and output an automated trend plot.
 ```
 import matplotlib.pyplot as plt
