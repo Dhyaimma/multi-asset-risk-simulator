@@ -223,7 +223,7 @@ plt.show()
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/Dhyaimma/multi-asset-risk-simulator.git](https://github.com/Dhyaimma/multi-asset-risk-simulator.git)
+   git clone https://github.com/Dhyaimma/multi-asset-risk-simulator.git
    ```
 2. Install Python dependencies:
    ```bash
