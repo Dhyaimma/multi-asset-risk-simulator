@@ -227,15 +227,17 @@ plt.show()
    ```
 2. Install Python dependencies:
    ```bash
-  python -m pip install yfinance pandas mysql-connector-python matplotlib seaborn```
+   python -m pip install yfinance pandas mysql-connector-python matplotlib seaborn
+   ```
    
-3. Execute data ingestion:
+4. Execute data ingestion:
    ```bash
    python scripts/01_data_ingestion.py
    ```
-4. Build SQL Views: Execute ```bash scripts/02_risk_engine_schema.sql ``` inside MySQL Workbench.
+5. Build SQL Views: Execute ```bash
+    scripts/02_risk_engine_schema.sql ``` inside MySQL Workbench.
 
-5. Generate Chart:
+7. Generate Chart:
    ```bash
    python scripts/03_plot_volatility.py
    ```
