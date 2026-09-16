@@ -26,7 +26,7 @@ SQL Analytics Views (daily_returns ➔ rolling_volatility ➔ market_shocks)
        ▼
 Automated Risk Alerts & Visualization Engine (03_plot_volatility.py)
 ```
-#### 📊 Asset Universe Monitored
+## 📊 Asset Universe Monitored
 
 1. **S&P 500 (`^GSPC`):** US Equity Market Benchmark
 2. **10-Year US Treasury Yield (`^TNX`):** Benchmark Risk-Free Rate & Borrowing Cost
@@ -77,3 +77,128 @@ for ticker in tickers:
 db.commit()
 cursor.close()
 db.close()
+```
+### Step 2: MySQL Database Schema Design
+
+```sql
+CREATE DATABASE IF NOT EXISTS global_markets;
+USE global_markets;
+
+CREATE TABLE IF NOT EXISTS asset_prices (
+    trade_date DATE NOT NULL,
+    ticker VARCHAR(10) NOT NULL,
+    close_price DECIMAL(12, 4) NOT NULL,
+    PRIMARY KEY (trade_date, ticker)
+);
+```
+
+---
+
+### Step 3: Dynamic SQL Analytics Views
+
+```sql
+-- Daily Returns View
+CREATE OR REPLACE VIEW daily_returns AS
+SELECT 
+    trade_date,
+    ticker,
+    close_price,
+    LAG(close_price, 1) OVER (PARTITION BY ticker ORDER BY trade_date) AS prev_close_price,
+    ROUND(LN(close_price / LAG(close_price, 1) OVER (PARTITION BY ticker ORDER BY trade_date)), 6) AS log_return
+FROM asset_prices;
+
+--30-Day Annualized Rolling Volatility View
+CREATE OR REPLACE VIEW rolling_volatility AS
+SELECT 
+    trade_date,
+    ticker,
+    log_return,
+    ROUND(
+        STDDEV_SAMP(log_return) OVER (
+            PARTITION BY ticker 
+            ORDER BY trade_date 
+            ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+        ) * SQRT(252), 4
+    ) AS vol_30d_annualized
+FROM daily_returns
+WHERE log_return IS NOT NULL;
+
+--$3\sigma$ Market Shock Detection View
+CREATE OR REPLACE VIEW market_shocks AS
+WITH rolling_stats AS (
+    SELECT 
+        trade_date,
+        ticker,
+        log_return,
+        AVG(log_return) OVER (
+            PARTITION BY ticker 
+            ORDER BY trade_date 
+            ROWS BETWEEN 89 PRECEDING AND CURRENT ROW
+        ) AS mean_90d,
+        STDDEV_SAMP(log_return) OVER (
+            PARTITION BY ticker 
+            ORDER BY trade_date 
+            ROWS BETWEEN 89 PRECEDING AND CURRENT ROW
+        ) AS std_90d
+    FROM daily_returns
+    WHERE log_return IS NOT NULL
+)
+SELECT 
+    trade_date,
+    ticker,
+    log_return,
+    ROUND((log_return - mean_90d) / NULLIF(std_90d, 0), 2) AS z_score,
+    CASE 
+        WHEN ABS((log_return - mean_90d) / NULLIF(std_90d, 0)) >= 3.0 THEN 1 
+        ELSE 0 
+    END AS is_shock_day
+FROM rolling_stats;
+```
+###Step 4: Visual Reporting Engine
+Python connects directly to the MySQL database view (rolling_volatility) to extract pre-processed metrics and output an automated trend plot.
+```
+import matplotlib.pyplot as plt
+import mysql.connector
+import pandas as pd
+import seaborn as sns
+
+# 1. Connect to MySQL View
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="YOUR_PASSWORD",
+    database="global_markets",
+)
+
+query = "SELECT trade_date, ticker, vol_30d_annualized FROM rolling_volatility WHERE vol_30d_annualized IS NOT NULL;"
+df = pd.read_sql(query, con=db)
+db.close()
+
+# 2. Pivot & Plot
+df_pivot = df.pivot(
+    index="trade_date", columns="ticker", values="vol_30d_annualized"
+)
+
+sns.set_theme(style="whitegrid")
+plt.figure(figsize=(12, 6), dpi=300)
+
+for ticker in df_pivot.columns:
+    plt.plot(df_pivot.index, df_pivot[ticker], label=ticker, linewidth=1.8)
+
+plt.title(
+    "30-Day Rolling Annualized Volatility (MySQL Views Pipeline)",
+    fontsize=14,
+    fontweight="bold",
+)
+plt.ylabel("Annualized Volatility (σ)")
+plt.gca().yaxis.set_major_formatter(
+    plt.FuncFormatter(lambda y, _: "{:.0%}".format(y))
+)
+plt.legend(title="Asset Class", loc="upper right")
+plt.tight_layout()
+
+# Save image for documentation
+plt.savefig("docs/rolling_volatility_chart.png", dpi=300)
+plt.show()
+```
+
