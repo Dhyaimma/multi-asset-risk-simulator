@@ -234,7 +234,7 @@ plt.show()
    ```bash
    python scripts/01_data_ingestion.py
    ```
-5. Build SQL Views: Execute ```bash
+5. Build SQL Views: Execute ```
     scripts/02_risk_engine_schema.sql ``` inside MySQL Workbench.
 
 7. Generate Chart:
