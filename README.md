@@ -98,7 +98,8 @@ CREATE TABLE IF NOT EXISTS asset_prices (
 
 ```sql
 -- Daily Returns View
-Calculates time-additive daily logarithmic returns using LAG() window functions partitioned by ticker.$$\text{Log Return}_t = \ln\left(\frac{P_t}{P_{t-1}}\right)$$
+-- Calculates time-additive daily logarithmic returns using LAG() window functions partitioned by ticker
+-- Formula: Log Return(t) = LN( P(t) / P(t-1) )
 CREATE OR REPLACE VIEW daily_returns AS
 SELECT 
     trade_date,
@@ -109,7 +110,8 @@ SELECT
 FROM asset_prices;
 
 --30-Day Annualized Rolling Volatility View
-Calculates rolling 30-day standard deviation scaled by $\sqrt{252}$ trading days to compute annualized asset risk.$$\sigma_{\text{Annualized}} = \sigma_{30\text{d}} \times \sqrt{252}$$
+-- Calculates rolling 30-day standard deviation scaled by sqrt(252) trading days to compute annualized asset risk
+-- Formula: Vol_Annualized = Vol_30d * SQRT(252)
 CREATE OR REPLACE VIEW rolling_volatility AS
 SELECT 
     trade_date,
@@ -125,7 +127,7 @@ SELECT
 FROM daily_returns
 WHERE log_return IS NOT NULL;
 
---$3\sigma$ Market Shock Detection View
+-- 3σ Market Shock Detection View
 CREATE OR REPLACE VIEW market_shocks AS
 WITH rolling_stats AS (
     SELECT 
