@@ -206,3 +206,37 @@ plt.savefig("docs/rolling_volatility_chart.png", dpi=300)
 plt.show()
 ```
 
+---
+
+## 📈 Key Findings Summary
+
+| Ticker | Asset Class | Annualized Volatility (30d) | Total 3σ Shock Events | Risk Profile |
+| :--- | :--- | :---: | :---: | :--- |
+| **BZ=F** | Brent Crude Oil | **38.71%** | **19** | High Commodity Supply Shock Risk |
+| **^TNX** | 10-Yr Treasury Yield | **32.99%** | **5** | Monetary Policy & Rate Volatility |
+| **GC=F** | Gold | **18.55%** | **16** | Moderated Safe-Haven Buffer |
+| **^GSPC** | S&P 500 | **16.57%** | **12** | Core US Equity Market Reference |
+
+---
+
+## 🚀 How to Run
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Dhyaimma/multi-asset-risk-simulator.git](https://github.com/Dhyaimma/multi-asset-risk-simulator.git)
+   ```
+2. Install Python dependencies:
+   ```bash
+   python scripts/01_data_ingestion.py
+   ```
+3. Execute data ingestion:
+   ```bash
+   python scripts/01_data_ingestion.py
+   ```
+4. Build SQL Views: Execute scripts/02_risk_engine_schema.sql inside MySQL Workbench.
+
+5. Generate Chart:
+   ```bash
+   python scripts/03_plot_volatility.py
+   ```
+   
